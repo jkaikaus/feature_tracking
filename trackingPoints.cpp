@@ -1,7 +1,4 @@
 // Some basic code to track points in a video using OpenCV.
-// Look at this function for ideas: calcOpticalFlowPyrLK()
-// Replace the C-interface functions with C++ functions in the current tracking code.
-// Integrate the updated code into our reflection tracking code.
 
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -13,7 +10,7 @@
 
 using namespace cv;
 
-Mat maskingPoints(Mat img, std::vector<Point2f> vector, int sidelength)
+Mat maskingPoints(Mat img, std::vector<Point2f> vector)
 {
 	//make mask to 'block off' existing feature points
 	Mat gray;	
@@ -28,18 +25,21 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int sidelength)
 	return mask;
 }
 
-//Load images, get correct image names, then display image
+
+
 int main(int argc, char** argv)
 {
 	
 	Mat img, gray_prev, gray;
-	std::vector<Point2f> features[2],original; //features[0] is previous, features[1] is current, original is very first features obtained
+	std::vector<int> tags;
+	std::vector<Point2f> features[2], original; //features[0] is previous, features[1] is current, original is very first features obtained
 	char name[500];
-
+	char str[200];
+	int next_tag = 1;
 	while (scanf("%s", name) != EOF){
 		
 		//goodFeaturesToTrack variables
-		int max_count = 200; //maximum number of features to track
+		int max_count = 10; //maximum number of features to track
 		double qlevel = .01; //quality of features increases as qlevel decreases
 		double minDist = 10; //minimum distance between points
 
@@ -53,30 +53,41 @@ int main(int argc, char** argv)
 		Mat mask; //mask returned by maskingPoints
 		std::vector<Point2f> temp; //temp vector use to obtain more features
 		size_t k =0; //variable needed to resize vectors
-
+		
+		
 		img = imread(name);
-		printf("%s\n", name);
-		cvtColor(img, gray, COLOR_BGR2GRAY); //convert image to grayscale to use in gFTT and cOFPLK
+		//printf("%s\n", name);
+		cvtColor(img, gray, COLOR_BGR2GRAY); //convert image to grayscale for use in gFTT and cOFPLK
 
 		// Obtain very first set of features
 		if (original.empty())
 		{
 			goodFeaturesToTrack(gray,original, max_count, qlevel, minDist,Mat(), 3, 0, 0.04);
+			cornerSubPix(gray, original, subPixWinSize, Size(-1,-1), termcrit);
 			features[0] = original;
+			for(int z = 0; z <features[0].size(); z++)
+			{
+				tags.push_back(next_tag++);
+			}
 			
 		}
-
-		//Add on to features vector as frames increases.
+		
+		
+		//Add on to features vector if number of features drops below max
 		if (features[0].size()< max_count)
 		{
-			mask = maskingPoints(gray, features[0], 1);
-			goodFeaturesToTrack(gray,temp, max_count, qlevel, minDist,mask, 3, 0, 0.04);
+						
+			int max_count_2 = max_count - features[0].size();
+			mask = maskingPoints(gray_prev, features[0]);
+			goodFeaturesToTrack(gray_prev,temp, max_count, qlevel, minDist,mask, 3, 0, 0.04);
+			cornerSubPix(gray, temp, subPixWinSize, Size(-1,-1), termcrit);
 			for (int j =0; j < temp.size(); j++)
 			{
 				features[0].push_back(temp[j]);
+				tags.push_back(next_tag++);
 			}			
 		}
-
+			
 		
 		if (!features[0].empty())
 		{
@@ -90,23 +101,36 @@ int main(int argc, char** argv)
 			
 			for(size_t i = 0; i<features[1].size(); i++)
 			{
-				
-				if( !status[i] )
+				if(!status[i])
 				{
+					tags.erase(tags.begin()+i);
                     			continue;
 				}
-				features[1][k++] = features[1][i];//keep track of totale number of features
-				circle(img, features[1][i], 5, Scalar(0, 0, 255), -1);
-				//circle(img, features[0][i], 5, Scalar(0, 255, 0), -1);	
-				//line(img, features[0][i], features[1][i],Scalar(0, 255, 0));		
+				
+				features[1][k++] = features[1][i];  //keep track of total number of features
+				circle(img, features[1][i], 3, Scalar(0, 0, 255), -1);
+				sprintf(str, "%d", tags[i]);
+				putText(img, str, features[1][i], FONT_HERSHEY_SCRIPT_SIMPLEX, .5,  Scalar::all(0)); //labels on each point
+
+				//circle(img, features[0][i], 5, Scalar(0, 255, 0), -1);  //visual representation of where features were previously
+				//line(img, features[0][i], features[1][i],Scalar(0, 255, 0));	//visual representation of where features were previously	
 			
 			}
+		
 		features[1].resize(k); //resize to total number of features (no blank spaces)
+		tags.resize(k);
+		printf("features = %d\n", features[1].size());
+		printf("tags = %d\n", tags.size());
 		}
+
+		/*for (size_t a = 0; a<features[1].size(); a++) //label each feature
+		{
+			printf("-- Feature point[%d] (%f, %f)\n", a, features[1][a].x, features[1][a].y);
+			
+		}*/
 
 		imshow("img", img);
 		waitKey(1); //image displayed till key is pressed
-
 		std::swap(features[1], features[0]); //move current features to previous
         	swap(gray_prev, gray); //move the current image to previous
 	}
