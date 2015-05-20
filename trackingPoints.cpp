@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 	
 	Mat img, gray_prev, gray;
 	std::vector<int> tags;
-	std::vector<Point2f> features_prev, features; //features_prev is previous, features is current, original is very first features obtained
+	std::vector<Point2f> features_prev, features, original; //features_prev is previous, features is current, original is very first features obtained
 	char name[500];
 	char str[500];
 	size_t next_tag = 1;
@@ -57,9 +57,10 @@ int main(int argc, char** argv)
 		cvtColor(img, gray, COLOR_BGR2GRAY); //convert image to grayscale for use in gFTT and cOFPLK
 
 		// Obtain very first set of features
-		if (features_prev.empty())
+		if (original.empty())
 		{
-			goodFeaturesToTrack(gray,features_prev, max_count, qlevel, minDist,Mat(), 3, 0, 0.04);
+			goodFeaturesToTrack(gray,original, max_count, qlevel, minDist,Mat(), 3, 0, 0.04);
+			features_prev = original;
 			for(int z = 0; z <features_prev.size(); z++)
 			{
 				tags.push_back(next_tag++);
@@ -67,47 +68,57 @@ int main(int argc, char** argv)
 			
 		}
 		
-		
-		//Add on to features vector if number of features drops below max
-		
-			
-		
 		if (!features_prev.empty())
 		{
-			//features[1].clear();
+			//features.clear();
 			std::vector<uchar> status;
         		std::vector<float> err;
-			if(gray_prev.empty() )
+			if(gray_prev.empty())
 			{
 				gray.copyTo(gray_prev);
 			}
 			
 			calcOpticalFlowPyrLK(gray_prev, gray, features_prev, features, status, err, winSize, 3, termcrit, 0, 0.001);
-			
-			for(size_t i = 0; i<features.size(); i++)
+			size_t j = 0;
+			std::vector<int>::iterator it = tags.begin();
+			std::vector<Point2f>::iterator its = features.begin();
+			while(it != tags.end())
 			{
-				if(!status[i])
-				{
-					tags.erase(tags.begin()+i);
-                    			continue;
+				if(!status[j])
+				{					
+					it=tags.erase(it);
+					its=features.erase(its);
+					j++;
+                   			continue;	
+				} else {
+					++it;
+					++its;
+					++j;
 				}
 				
+			}
+			
+			for(size_t i = 0; i<features.size(); i++)
+			{	
+			
 				features[k++] = features[i];  //keep track of total number of features
 				circle(img, features[i], 5, Scalar(0, 0, 255), -1);
 				sprintf(str, "%d", tags[i]);
 				putText(img, str, features[i], FONT_HERSHEY_SCRIPT_SIMPLEX, .5,  Scalar::all(0)); //labels on each point
-				//printf("-- Feature point[%d] (%f, %f)\n", tags[i], features[i].x, features[i].y);
+				printf("%d,%f,%f\n", tags[i], features[i].x, features[i].y);
+				
 			}
 		
 		features.resize(k); //resize to total number of features (no blank spaces)
 		tags.resize(k);
+
 		
 		}
 
 		if (features.size()< (size_t)max_count)
 		{
 						
-			const int max_count_2 = 20;
+			const int max_count_2 = 200;
 			mask = maskingPoints(gray, features);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
@@ -119,6 +130,7 @@ int main(int argc, char** argv)
 
 		imshow("img", img);
 		waitKey(1); //image displayed till key is pressed
+		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
         	swap(gray_prev, gray); //move the current image to previous
 	}
