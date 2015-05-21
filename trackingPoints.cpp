@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 	while (scanf("%s", name) != EOF){
 		
 		//goodFeaturesToTrack variables
-		const int max_count = 10; //maximum number of features to track
+		const int max_count = 100; //maximum number of features to track
 		double qlevel = .01; //quality of features increases as qlevel decreases
 		double minDist = 10; //minimum distance between points
 
@@ -86,17 +86,20 @@ int main(int argc, char** argv)
 			size_t j = 0;
 			std::vector<int>::iterator it = tags.begin();
 			std::vector<Point2f>::iterator its = features.begin();
+			std::vector<Point2f>::iterator itss = features_prev.begin();
 			while(it != tags.end())
 			{
 				if(!status[j])
 				{					
 					it=tags.erase(it);
 					its=features.erase(its);
+					itss=features_prev.erase(itss);
 					j++;
                    			continue;	
 				} else {
 					++it;
 					++its;
+					++itss;
 					++j;
 				}
 				
@@ -106,7 +109,6 @@ int main(int argc, char** argv)
 			std::vector<Point2f> features_est;
 			
 			Mat homography = findHomography(features_prev, features, CV_RANSAC );
-			
 			perspectiveTransform(features_prev,features_est, homography);
 			
 			//removing outlier points
@@ -118,7 +120,6 @@ int main(int argc, char** argv)
 				{					
 					it=tags.erase(it);
 					its=features.erase(its);
-					count++;
                    			continue;	
 				} else {
 					++it;
@@ -151,7 +152,7 @@ int main(int argc, char** argv)
 		if (features.size()< (size_t)max_count)
 		{
 						
-			const int max_count_2 = 20;
+			const int max_count_2 = 100;
 			mask = maskingPoints(gray, features);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
