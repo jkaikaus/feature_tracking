@@ -102,6 +102,33 @@ int main(int argc, char** argv)
 				
 			}
 			
+			//homography
+			std::vector<Point2f> features_est;
+			
+			Mat homography = findHomography(features_prev, features, CV_RANSAC );
+			
+			perspectiveTransform(features_prev,features_est, homography);
+			
+			//removing outlier points
+			int count = 0;
+			while(its != features.end())
+			{
+				double error = pow(pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2), 0.5);
+				if(error>5)
+				{					
+					it=tags.erase(it);
+					its=features.erase(its);
+					count++;
+                   			continue;	
+				} else {
+					++it;
+					++its;
+					++count;
+				}
+				
+			}
+
+
 			for(size_t i = 0; i<features.size(); i++)
 			{	
 			
@@ -113,16 +140,8 @@ int main(int argc, char** argv)
 				
 			}
 		
-			//homography
-			std::vector<Point2f> features_prev_vector, features_vector, features_est;
-			for (int i = 0; i < max_count; i++){
-				features_prev_vector.push_back(Point2f(features_prev[i].x, features_prev[i].y));
-				features_vector.push_back(Point2f(features[i].x, features[i].y));
-			}
-			Mat homography = findHomography(features_prev_vector, features_vector, CV_RANSAC );
-			
-			perspectiveTransform(features_prev_vector,features_est, homography);
-			
+
+
 			features.resize(k); //resize to total number of features (no blank spaces)
 			tags.resize(k);
 
@@ -132,7 +151,7 @@ int main(int argc, char** argv)
 		if (features.size()< (size_t)max_count)
 		{
 						
-			const int max_count_2 = 200;
+			const int max_count_2 = 20;
 			mask = maskingPoints(gray, features);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
