@@ -2,6 +2,10 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/videoio/videoio.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/calib3d/calib3d_c.h"
+#include "opencv2/calib3d/calib3d.hpp"
 
 #include <iostream>
 #include <ctype.h>
@@ -109,8 +113,21 @@ int main(int argc, char** argv)
 				
 			}
 		
-		features.resize(k); //resize to total number of features (no blank spaces)
-		tags.resize(k);
+			//homography
+			
+			Mat homography = findHomography(features_prev, features, CV_RANSAC );
+			std::vector<Point2f> obj_corners(4);
+			Size s = gray.size();
+  			obj_corners[0] = cvPoint(0,0); 
+			obj_corners[1] = cvPoint(s.height, 0 );
+ 			obj_corners[2] = cvPoint( s.height, s.width ); 
+			obj_corners[3] = cvPoint( 0, s.width );
+			
+			std::vector<Point2f> scene_corners(4);
+			perspectiveTransform(obj_corners,scene_corners, homography);
+			
+			features.resize(k); //resize to total number of features (no blank spaces)
+			tags.resize(k);
 
 		
 		}
