@@ -114,17 +114,14 @@ int main(int argc, char** argv)
 			}
 		
 			//homography
+			std::vector<Point2f> features_prev_vector, features_vector, features_est;
+			for (int i = 0; i < max_count; i++){
+				features_prev_vector.push_back(Point2f(features_prev[i].x, features_prev[i].y));
+				features_vector.push_back(Point2f(features[i].x, features[i].y));
+			}
+			Mat homography = findHomography(features_prev_vector, features_vector, CV_RANSAC );
 			
-			Mat homography = findHomography(features_prev, features, CV_RANSAC );
-			std::vector<Point2f> obj_corners(4);
-			Size s = gray.size();
-  			obj_corners[0] = cvPoint(0,0); 
-			obj_corners[1] = cvPoint(s.height, 0 );
- 			obj_corners[2] = cvPoint( s.height, s.width ); 
-			obj_corners[3] = cvPoint( 0, s.width );
-			
-			std::vector<Point2f> scene_corners(4);
-			perspectiveTransform(obj_corners,scene_corners, homography);
+			perspectiveTransform(features_prev_vector,features_est, homography);
 			
 			features.resize(k); //resize to total number of features (no blank spaces)
 			tags.resize(k);
