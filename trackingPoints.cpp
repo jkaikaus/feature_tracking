@@ -6,7 +6,9 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/calib3d/calib3d_c.h"
 #include "opencv2/calib3d/calib3d.hpp"
-
+#include <math.h>
+#include <vector>
+#include <stdio.h>
 #include <iostream>
 #include <ctype.h>
 
@@ -95,7 +97,7 @@ int main(int argc, char** argv)
 					its=features.erase(its);
 					itss=features_prev.erase(itss);
 					j++;
-                   			continue;	
+                   	continue;	
 				} else {
 					++it;
 					++its;
@@ -108,33 +110,40 @@ int main(int argc, char** argv)
 			//homography
 			std::vector<Point2f> features_est;
 			
-			Mat homography = findHomography(features_prev, features, CV_RANSAC );
-			std::cout << std::endl << " " << homography << std::endl << std::endl;
-			if (homography.empty())
+			Mat homography = findHomography(features_prev, features, CV_RANSAC);
+			
+			if (!homography.empty())
 			{
-				continue;
-			} else {
-				perspectiveTransform(features_prev,features_est, homography);
+				std::cout << std::endl << " " << homography << std::endl << std::endl;	
+				perspectiveTransform(features,features_est, homography);
 				//removing outlier points
-				int count = 0;
-				while(its != features.end())
+				size_t count = 0;
+				double error;
+				std::vector<int>::iterator t = tags.begin();
+				std::vector<Point2f>::iterator ts = features.begin();
+				std::vector<Point2f>::iterator tss = features_prev.begin();
+				while(ts != features.end())
 				{
-					double error = pow(pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2), 0.5);
-					printf("%d", error);
-					if(error>.01)
-					{					
-						it=tags.erase(it);
-						its=features.erase(its);
-                   				continue;	
+					error = pow(pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2), 0.5);
+					
+					if(error>10)
+					{
+						std::cout << error << std::endl;
+						t=tags.erase(t);
+						ts=features.erase(ts);
+						tss= features_prev.erase(tss);
+						//continue;
+						//count++;
 					} else {
-						++it;
-						++its;
+						++t;
+						++ts;
+						++tss;
 						++count;
 					}
 				
 				}
 			}
-
+			
 			for(size_t i = 0; i<features.size(); i++)
 			{	
 			
@@ -168,7 +177,7 @@ int main(int argc, char** argv)
 		}
 
 		imshow("img", img);
-		waitKey(1); //image displayed till key is pressed
+		waitKey(0); //image displayed till key is pressed
 		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
         	swap(gray_prev, gray); //move the current image to previous
