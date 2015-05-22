@@ -109,26 +109,31 @@ int main(int argc, char** argv)
 			std::vector<Point2f> features_est;
 			
 			Mat homography = findHomography(features_prev, features, CV_RANSAC );
-			perspectiveTransform(features_prev,features_est, homography);
-			
-			//removing outlier points
-			int count = 0;
-			while(its != features.end())
+			std::cout << std::endl << " " << homography << std::endl << std::endl;
+			if (homography.empty())
 			{
-				double error = pow(pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2), 0.5);
-				if(error>5)
-				{					
-					it=tags.erase(it);
-					its=features.erase(its);
-                   			continue;	
-				} else {
-					++it;
-					++its;
-					++count;
-				}
+				continue;
+			} else {
+				perspectiveTransform(features_prev,features_est, homography);
+				//removing outlier points
+				int count = 0;
+				while(its != features.end())
+				{
+					double error = pow(pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2), 0.5);
+					printf("%d", error);
+					if(error>.01)
+					{					
+						it=tags.erase(it);
+						its=features.erase(its);
+                   				continue;	
+					} else {
+						++it;
+						++its;
+						++count;
+					}
 				
+				}
 			}
-
 
 			for(size_t i = 0; i<features.size(); i++)
 			{	
@@ -137,7 +142,7 @@ int main(int argc, char** argv)
 				circle(img, features[i], 5, Scalar(0, 0, 255), -1);
 				sprintf(str, "%d", tags[i]);
 				putText(img, str, features[i], FONT_HERSHEY_SCRIPT_SIMPLEX, .5,  Scalar::all(0)); //labels on each point
-				printf("%d,%f,%f\n", tags[i], features[i].x, features[i].y);
+				//printf("%d,%f,%f\n", tags[i], features[i].x, features[i].y);
 				
 			}
 		
