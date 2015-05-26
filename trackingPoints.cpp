@@ -14,7 +14,7 @@
 
 using namespace cv;
 
-Mat maskingPoints(Mat img, std::vector<Point2f> vector)
+Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 {
 	//make mask to 'block off' existing feature points
 	Mat gray;	
@@ -22,9 +22,15 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector)
 	int rows = s.height;
 	int cols = s.width;
 	Mat mask = Mat::ones(rows, cols, CV_8UC1)*255; //make mask based off of image dimensions
+	int dim = size *2;
 	for (int i =0; i < vector.size(); i++) //plot feature points onto mask
 	{
-		mask.at<int>(vector[i]) = 0;
+		//mask.at<int>(vector[i].x, vector[i].y) = 0;
+		
+		Rect pixels(vector[i].x-size, vector[i].y-size, dim, dim); 
+		Rect imgbounds(0, 0, rows, cols);
+		Rect ROI = pixels & imgbounds;
+		mask(ROI) = 0;
 	}
 	return mask;
 }
@@ -76,9 +82,9 @@ int main(int argc, char** argv)
 		
 		if (!features_prev.empty())
 		{
-			//features.clear();
+			features.clear();
 			std::vector<uchar> status;
-        		std::vector<float> err;
+        	std::vector<float> err;
 			if(gray_prev.empty())
 			{
 				gray.copyTo(gray_prev);
@@ -110,12 +116,12 @@ int main(int argc, char** argv)
 			//homography
 			std::vector<Point2f> features_est;
 			
-			Mat homography = findHomography(features_prev, features, CV_RANSAC);
+			Mat homography = findHomography(features_prev, features, CV_RANSAC );
 			
 			if (!homography.empty())
 			{
 				std::cout << std::endl << " " << homography << std::endl << std::endl;	
-				perspectiveTransform(features,features_est, homography);
+				perspectiveTransform(features_prev,features_est, homography);
 				//removing outlier points
 				size_t count = 0;
 				double error;
@@ -124,16 +130,14 @@ int main(int argc, char** argv)
 				std::vector<Point2f>::iterator tss = features_prev.begin();
 				while(ts != features.end())
 				{
-					error = pow(pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2), 0.5);
-					
-					if(error>10)
+					error = pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2);
+					std::cout << error << std::endl;
+					if(error>25)
 					{
-						std::cout << error << std::endl;
 						t=tags.erase(t);
 						ts=features.erase(ts);
 						tss= features_prev.erase(tss);
-						//continue;
-						//count++;
+						continue;
 					} else {
 						++t;
 						++ts;
@@ -167,7 +171,7 @@ int main(int argc, char** argv)
 		{
 						
 			const int max_count_2 = 100;
-			mask = maskingPoints(gray, features);
+			mask = maskingPoints(gray, features, 5);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
 			{
@@ -177,7 +181,7 @@ int main(int argc, char** argv)
 		}
 
 		imshow("img", img);
-		waitKey(0); //image displayed till key is pressed
+		waitKey(1); //image displayed till key is pressed
 		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
         	swap(gray_prev, gray); //move the current image to previous
