@@ -3,6 +3,7 @@
 #include "opencv2/videoio/videoio.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/core/core.hpp"
+#include "opencv2/opencv.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/calib3d/calib3d_c.h"
 #include "opencv2/calib3d/calib3d.hpp"
@@ -11,6 +12,8 @@
 #include <stdio.h>
 #include <iostream>
 #include <ctype.h>
+#include <stdlib.h>
+
 
 using namespace cv;
 
@@ -25,44 +28,38 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 	int dim = size *2;
 	for (int i =0; i < vector.size(); i++) //plot feature points onto mask
 	{
-		//mask.at<int>(vector[i].x, vector[i].y) = 0;
-		
 		Rect pixels(vector[i].x-size, vector[i].y-size, dim, dim); 
-		Rect imgbounds(0, 0, rows, cols);
-		Rect ROI = pixels & imgbounds;
-		mask(ROI) = 0;
+		rectangle(mask, pixels, Scalar::all(0),-1,8, 0);
 	}
 	return mask;
 }
-
-
 
 int main(int argc, char** argv)
 {
 	
 	Mat img, gray_prev, gray;
 	std::vector<int> tags;
-	std::vector<Point2f> features_prev, features, original; //features_prev is previous, features is current, original is very first features obtained
+	std::vector<Point2f> features_prev, original; //features_prev is previous, features is current, original is very first features obtained
 	char name[500];
 	char str[500];
 	size_t next_tag = 1;
+	const int max_count = 100; //maximum number of features to track
+	const double qlevel = .01; //quality of features increases as qlevel decreases
+	const double minDist = 15; //minimum distance between points
+
 	while (scanf("%s", name) != EOF){
 		
 		//goodFeaturesToTrack variables
-		const int max_count = 100; //maximum number of features to track
-		double qlevel = .01; //quality of features increases as qlevel decreases
-		double minDist = 10; //minimum distance between points
-
+		std::vector<Point2f> features;
+		
 		//calcOpticalFLowPyrLK variables
 		VideoCapture cap;
-    		TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
-    		Size subPixWinSize(10,10), winSize(31,31);
+    	TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
+    	Size subPixWinSize(10,10), winSize(31,31);
 		
-
 		Mat mask; //mask returned by maskingPoints
 		std::vector<Point2f> temp; //temp vector use to obtain more features
 		size_t k =0; //variable needed to resize vectors
-		
 		
 		img = imread(name);
 		//printf("%s\n", name);
@@ -76,13 +73,12 @@ int main(int argc, char** argv)
 			for(int z = 0; z <features_prev.size(); z++)
 			{
 				tags.push_back(next_tag++);
-			}
-			
+			}	
 		}
 		
 		if (!features_prev.empty())
 		{
-			features.clear();
+			//features.clear();
 			std::vector<uchar> status;
         	std::vector<float> err;
 			if(gray_prev.empty())
@@ -104,24 +100,25 @@ int main(int argc, char** argv)
 					itss=features_prev.erase(itss);
 					j++;
                    	continue;	
-				} else {
-					++it;
-					++its;
-					++itss;
-					++j;
 				}
-				
+				++it;
+				++its;
+				++itss;
+				++j;
 			}
-			
+
 			//homography
-			std::vector<Point2f> features_est;
-			
-			Mat homography = findHomography(features_prev, features, CV_RANSAC );
-			
+			std::vector<Point2f> features_est, featprev_Vec, features_Vec;
+			for(int a =0; a < max_count; a++)
+       		{
+            	featprev_Vec.push_back(Point2f( features_prev[a].x, features_prev[a].y ));
+            	features_Vec.push_back(Point2f( features[a].x, features[a].y ));
+        	}
+			Mat homography = findHomography(featprev_Vec, features_Vec, CV_RANSAC );
 			if (!homography.empty())
 			{
-				std::cout << std::endl << " " << homography << std::endl << std::endl;	
-				perspectiveTransform(features_prev,features_est, homography);
+				
+				perspectiveTransform(featprev_Vec,features_est, homography);
 				//removing outlier points
 				size_t count = 0;
 				double error;
@@ -130,13 +127,13 @@ int main(int argc, char** argv)
 				std::vector<Point2f>::iterator tss = features_prev.begin();
 				while(ts != features.end())
 				{
-					error = pow(features[count].x - features_est[count].x, 2) + pow(features[count].y - features_est[count].y, 2);
-					std::cout << error << std::endl;
+					error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
 					if(error>25)
 					{
 						t=tags.erase(t);
 						ts=features.erase(ts);
 						tss= features_prev.erase(tss);
+						count++;
 						continue;
 					} else {
 						++t;
@@ -144,34 +141,24 @@ int main(int argc, char** argv)
 						++tss;
 						++count;
 					}
-				
-				}
+				}	
 			}
-			
 			for(size_t i = 0; i<features.size(); i++)
 			{	
-			
+				
 				features[k++] = features[i];  //keep track of total number of features
 				circle(img, features[i], 5, Scalar(0, 0, 255), -1);
 				sprintf(str, "%d", tags[i]);
 				putText(img, str, features[i], FONT_HERSHEY_SCRIPT_SIMPLEX, .5,  Scalar::all(0)); //labels on each point
-				//printf("%d,%f,%f\n", tags[i], features[i].x, features[i].y);
-				
+				printf("%d,%f,%f\n", tags[i], features[i].x, features[i].y);	
 			}
-		
-
-
 			features.resize(k); //resize to total number of features (no blank spaces)
-			tags.resize(k);
-
-		
+			tags.resize(k);	
 		}
-
 		if (features.size()< (size_t)max_count)
-		{
-						
+		{			
 			const int max_count_2 = 100;
-			mask = maskingPoints(gray, features, 5);
+			mask = maskingPoints(gray, features, 15);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
 			{
@@ -179,12 +166,12 @@ int main(int argc, char** argv)
 				tags.push_back(next_tag++);
 			}			
 		}
-
-		imshow("img", img);
+		namedWindow("Image Window", WINDOW_NORMAL );
+		imshow("Image Window", img);
 		waitKey(1); //image displayed till key is pressed
 		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
-        	swap(gray_prev, gray); //move the current image to previous
+        std::swap(gray_prev, gray); //move the current image to previous
 	}
 
 	return 0;
