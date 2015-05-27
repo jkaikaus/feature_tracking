@@ -49,20 +49,37 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 
 void help(std::string program_name)
 {
-	std::cout << "Usage: " << program_name << " [options] [error_value] " << std::endl;
+	std::cout << "Usage: " << program_name << " [options] [error_value] [max_count] " << std::endl;
 }
 
 int main(int argc, char** argv)
 {
 	int error_val; //best value is between 9 and 16, ~12.
-	if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'f') //'f' is flag to use findHomography
+	int max_count; //maximum number of features to track
+	if (argc == 5)
 	{
-		error_val = argv[1][0];
-	} else if (argc > 1 && (argv[1][1] != 'f')) {
-		help(argv[0]);
-		exit(EXIT_FAILURE);
-	} else {
+		if (argv[1][0] == '-' && argv[1][1]=='f' && argv[2][0] == '-' && argv[2][1]=='m'){
+			error_val = atoi(argv[3]);
+			max_count = atoi(argv[4]);
+		} else {
+			help(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	} else if (argc == 3) {
+		if(argv[1][0] == '-' && argv[1][1] == 'f'){
+			error_val = atoi(argv[2]);
+		} else if (argv[1][0] == '-' && argv[1][1] == 'm'){
+			max_count = atoi(argv[2]);
+		} else {
+			help(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	} else if (argc == 1){
 		error_val = 0;
+		max_count = 100;
+	} else {
+			help(argv[0]);
+			exit(EXIT_FAILURE);
 	}
 
 	Mat img, gray_prev, gray;
@@ -71,7 +88,7 @@ int main(int argc, char** argv)
 	char name[500];
 	char str[500];
 	size_t next_tag = 1;
-	const int max_count = 100; //maximum number of features to track
+	//const int max_count = 100;
 	const double qlevel = .01; //quality of features increases as qlevel decreases
 	const double minDist = 15; //minimum distance between points
 
@@ -197,10 +214,11 @@ int main(int argc, char** argv)
 		}
 		namedWindow("Image Window", WINDOW_NORMAL );
 		imshow("Image Window", img);
-		waitKey(1); //image displayed till key is pressed
+		waitKey(0); //image displayed till key is pressed
 		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
         std::swap(gray_prev, gray); //move the current image to previous
+		printf("\n"); //new line between each frame	
 	}
 
 	return 0;
