@@ -36,19 +36,21 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 
 void help(std::string program_name)
 {
-	std::cout << "Usage: " << program_name << " " << std:endl;
+	std::cout << "Usage: " << program_name << " " << std::endl;
 }
 
 int main(int argc, char** argv)
 {
 	int error_val;
-	if (argc > 1 && argv[1] == "-fH")
+	if (argc > 1 && argv[1] == "z")
 	{
-		
-	} else if (argc > 1 && argv[1] != "-fH")
+		error_val = atoi(argv[2]);
+	} else if (argc > 1 && argv[1] != "z")
 	{
 		help(argv[0]);
 		exit(EXIT_FAILURE);
+	} else {
+		error_val = 0;
 	}
 
 	Mat img, gray_prev, gray;
@@ -119,41 +121,44 @@ int main(int argc, char** argv)
 				++j;
 			}
 
+			
 			//homography
-			std::vector<Point2f> features_est, featprev_Vec, features_Vec;
-			for(int a =0; a < max_count; a++)
-       		{
-            	featprev_Vec.push_back(Point2f( features_prev[a].x, features_prev[a].y ));
-            	features_Vec.push_back(Point2f( features[a].x, features[a].y ));
-        	}
-			Mat homography = findHomography(featprev_Vec, features_Vec, CV_RANSAC );
-			if (!homography.empty())
-			{
-				
-				perspectiveTransform(featprev_Vec,features_est, homography);
-				//removing outlier points
-				size_t count = 0;
-				double error;
-				std::vector<int>::iterator t = tags.begin();
-				std::vector<Point2f>::iterator ts = features.begin();
-				std::vector<Point2f>::iterator tss = features_prev.begin();
-				while(ts != features.end())
+			if (error_val != 0)
+			{	
+				std::vector<Point2f> features_est, featprev_Vec, features_Vec;
+				for(int a =0; a < max_count; a++)
+		   		{
+		        	featprev_Vec.push_back(Point2f( features_prev[a].x, features_prev[a].y ));
+		        	features_Vec.push_back(Point2f( features[a].x, features[a].y ));
+		    	}
+				Mat homography = findHomography(featprev_Vec, features_Vec, CV_RANSAC );
+				if (!homography.empty())
 				{
-					error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
-					if(error>12)
+				
+					perspectiveTransform(featprev_Vec,features_est, homography);
+					//removing outlier points
+					size_t count = 0;
+					double error;
+					std::vector<int>::iterator t = tags.begin();
+					std::vector<Point2f>::iterator ts = features.begin();
+					std::vector<Point2f>::iterator tss = features_prev.begin();
+					while(ts != features.end())
 					{
-						t=tags.erase(t);
-						ts=features.erase(ts);
-						tss= features_prev.erase(tss);
-						count++;
-						continue;
-					} else {
+						error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
+						if(error>12)
+						{
+							t=tags.erase(t);
+							ts=features.erase(ts);
+							tss= features_prev.erase(tss);
+							count++;
+							continue;
+						}
 						++t;
 						++ts;
 						++tss;
 						++count;
-					}
-				}	
+					}	
+				}
 			}
 			for(size_t i = 0; i<features.size(); i++)
 			{	
