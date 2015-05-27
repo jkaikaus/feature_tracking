@@ -34,12 +34,21 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 	return mask;
 }
 
+void help(std::string program_name)
+{
+	std::cout << "Usage: " << program_name << " " << std:endl;
+}
+
 int main(int argc, char** argv)
 {
-
-	if (argc > 1 || )
+	int error_val;
+	if (argc > 1 && argv[1] == "-fH")
 	{
 		
+	} else if (argc > 1 && argv[1] != "-fH")
+	{
+		help(argv[0]);
+		exit(EXIT_FAILURE);
 	}
 
 	Mat img, gray_prev, gray;
@@ -67,7 +76,6 @@ int main(int argc, char** argv)
 		size_t k =0; //variable needed to resize vectors
 		
 		img = imread(name);
-		//printf("%s\n", name);
 		cvtColor(img, gray, COLOR_BGR2GRAY); //convert image to grayscale for use in gFTT and cOFPLK
 
 		// Obtain very first set of features
@@ -83,7 +91,6 @@ int main(int argc, char** argv)
 		
 		if (!features_prev.empty())
 		{
-			//features.clear();
 			std::vector<uchar> status;
         	std::vector<float> err;
 			if(gray_prev.empty())
@@ -133,7 +140,7 @@ int main(int argc, char** argv)
 				while(ts != features.end())
 				{
 					error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
-					if(error>25)
+					if(error>12)
 					{
 						t=tags.erase(t);
 						ts=features.erase(ts);
