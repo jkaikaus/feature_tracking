@@ -13,6 +13,7 @@
 #include <iostream>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string>
 
 
 using namespace cv;
@@ -36,17 +37,16 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 
 void help(std::string program_name)
 {
-	std::cout << "Usage: " << program_name << " " << std::endl;
+	std::cout << "Usage: " << program_name << " [options] [error_value] " << std::endl;
 }
 
 int main(int argc, char** argv)
 {
-	int error_val;
-	if (argc > 1 && argv[1] == "z")
+	int error_val; //best value is between 9 and 16, ~12.
+	if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'f') //'f' is flag to use findHomography
 	{
-		error_val = atoi(argv[2]);
-	} else if (argc > 1 && argv[1] != "z")
-	{
+		error_val = argv[1][0];
+	} else if (argc > 1 && (argv[1][1] != 'f')) {
 		help(argv[0]);
 		exit(EXIT_FAILURE);
 	} else {
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
 					while(ts != features.end())
 					{
 						error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
-						if(error>12)
+						if(error>error_val)
 						{
 							t=tags.erase(t);
 							ts=features.erase(ts);
