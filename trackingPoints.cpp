@@ -36,7 +36,12 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 
 int main(int argc, char** argv)
 {
-	
+
+	if (argc > 1 || )
+	{
+		
+	}
+
 	Mat img, gray_prev, gray;
 	std::vector<int> tags;
 	std::vector<Point2f> features_prev, original; //features_prev is previous, features is current, original is very first features obtained
