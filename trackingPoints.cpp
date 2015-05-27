@@ -66,10 +66,12 @@ int main(int argc, char** argv)
 			exit(EXIT_FAILURE);
 		}
 	} else if (argc == 3) {
-		if(argv[1][0] == '-' && argv[1][1] == 'f'){
-			error_val = atoi(argv[2]);
-		} else if (argv[1][0] == '-' && argv[1][1] == 'm'){
+		if (argv[1][0] == '-' && argv[1][1] == 'm'){
 			max_count = atoi(argv[2]);
+			error_val = 0;
+		} else if(argv[1][0] == '-' && argv[1][1] == 'f'){
+			error_val = atoi(argv[2]);
+			max_count = 100;
 		} else {
 			help(argv[0]);
 			exit(EXIT_FAILURE);
