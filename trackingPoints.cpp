@@ -43,7 +43,7 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size, bool incar)
 		rectangle(mask, pixels, Scalar::all(0),-1,8, 0);
 	}
     if (incar == true){
-        Rect pixels(0,625,s.width,s.height);
+        Rect pixels(0,600,s.width,s.height);
         rectangle(mask, pixels, Scalar::all(0),-1,8,0);
     }
 	return mask;
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 					while(ts != features.end())
 					{
 						error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
-						if(error>error_val)
+						if(error>error_val || ts->y>625)
 						{
 							t=tags.erase(t);
 							ts=features.erase(ts);
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
 		if (features.size()< (size_t)max_count)
 		{			
 			const int max_count_2 = 100;
-			mask = maskingPoints(gray, features, 15,false);
+			mask = maskingPoints(gray, features, 15,true);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
 			{
