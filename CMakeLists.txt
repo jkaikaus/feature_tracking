@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-project( trackingPoints )
-find_package( OpenCV REQUIRED )
-add_executable( trackingPoints trackingPoints.cpp )
-target_link_libraries( trackingPoints ${OpenCV_LIBS} )

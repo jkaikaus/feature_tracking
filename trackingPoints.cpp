@@ -18,15 +18,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string>
-#include "opencv2/video/tracking.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/videoio/videoio.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/core/core.hpp"
-#include "opencv2/opencv.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/calib3d/calib3d_c.h"
-#include "opencv2/calib3d/calib3d.hpp"
+#include <opencv2/video/tracking.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 
 using namespace cv;
 
@@ -39,7 +37,7 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 	int cols = s.width;
 	Mat mask = Mat::ones(rows, cols, CV_8UC1)*255; //make mask based off of image dimensions
 	int dim = size *2;
-	for (int i =0; i < vector.size(); i++) //plot feature points onto mask
+	for (size_t i =0; i < vector.size(); i++) //plot feature points onto mask
 	{
 		Rect pixels(vector[i].x-size, vector[i].y-size, dim, dim); 
 		rectangle(mask, pixels, Scalar::all(0),-1,8, 0);
@@ -93,6 +91,13 @@ int main(int argc, char** argv)
 	//const int max_count = 100;
 	const double qlevel = .01; //quality of features increases as qlevel decreases
 	const double minDist = 15; //minimum distance between points
+		VideoWriter outputVideo;
+		outputVideo.open("foo.avi", CV_FOURCC('F','M','P','4'), 25, Size(1600,1200), true);
+		if (!outputVideo.isOpened())
+    	{
+       		std::cerr  << "Could not open the output video for the input images" << std::endl;
+        	return -1;
+    	}
 
 	while (scanf("%s", name) != EOF){
 		
@@ -100,7 +105,6 @@ int main(int argc, char** argv)
 		std::vector<Point2f> features;
 		
 		//calcOpticalFLowPyrLK variables
-		VideoCapture cap;
     	TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
     	Size subPixWinSize(10,10), winSize(31,31);
 		
@@ -116,7 +120,7 @@ int main(int argc, char** argv)
 		{
 			goodFeaturesToTrack(gray,original, max_count, qlevel, minDist,Mat(), 3, 0, 0.04);
 			features_prev = original;
-			for(int z = 0; z <features_prev.size(); z++)
+			for(size_t z = 0; z <features_prev.size(); z++)
 			{
 				tags.push_back(next_tag++);
 			}	
@@ -214,9 +218,13 @@ int main(int argc, char** argv)
 				tags.push_back(next_tag++);
 			}			
 		}
-		namedWindow("Image Window", WINDOW_NORMAL );
-		imshow("Image Window", img);
-		waitKey(0); //image displayed till key is pressed
+		//namedWindow("Image Window", WINDOW_NORMAL );
+		//imshow("Image Window", img);
+		//waitKey(1); //image displayed till key is pressed
+
+
+		outputVideo << img;
+
 		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
         std::swap(gray_prev, gray); //move the current image to previous
