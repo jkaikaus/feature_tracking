@@ -28,7 +28,7 @@
 
 using namespace cv;
 
-Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
+Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size, bool incar)
 {
 	//make mask to 'block off' existing feature points
 	Mat gray;	
@@ -42,6 +42,10 @@ Mat maskingPoints(Mat img, std::vector<Point2f> vector, int size)
 		Rect pixels(vector[i].x-size, vector[i].y-size, dim, dim); 
 		rectangle(mask, pixels, Scalar::all(0),-1,8, 0);
 	}
+    if (incar == true){
+        Rect pixels(0,625,s.width,s.height);
+        rectangle(mask, pixels, Scalar::all(0),-1,8,0);
+    }
 	return mask;
 }
 
@@ -210,7 +214,7 @@ int main(int argc, char** argv)
 		if (features.size()< (size_t)max_count)
 		{			
 			const int max_count_2 = 100;
-			mask = maskingPoints(gray, features, 15);
+			mask = maskingPoints(gray, features, 15,false);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
 			{
