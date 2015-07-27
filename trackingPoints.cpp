@@ -223,8 +223,8 @@ int main(int argc, char** argv)
 			}			
 		}
 		//namedWindow("Image Window", WINDOW_NORMAL );
-		//imshow("Image Window", img);
-		//waitKey(1); //image displayed till key is pressed
+		imshow("Image Window", img);
+		waitKey(1); //image displayed till key is pressed
 
 
 		outputVideo << img;
