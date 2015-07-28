@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     	}
 
 	while (scanf("%s", name) != EOF){
-		
+		printf("--%s",name);	
 		//goodFeaturesToTrack variables
 		std::vector<Point2f> features;
 		
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 			std::vector<Point2f>::iterator itss = features_prev.begin();
 			while(it != tags.end())
 			{
-				if(!status[j])
+				if(!status[j] || its->y>625 || itss->y>625)
 				{					
 					it=tags.erase(it);
 					its=features.erase(its);
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 					while(ts != features.end())
 					{
 						error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
-						if(error>error_val || ts->y>625)
+						if(error>error_val || ts->y>625 || tss->y>625)
 						{
 							t=tags.erase(t);
 							ts=features.erase(ts);
@@ -206,6 +206,7 @@ int main(int argc, char** argv)
 				circle(img, features[i], 5, Scalar(0, 0, 255), -1);
 				sprintf(str, "%d", tags[i]);
 				putText(img, str, features[i], FONT_HERSHEY_SCRIPT_SIMPLEX, .5,  Scalar::all(0)); //labels on each point
+				putText(img, name, Point(200,900), FONT_HERSHEY_PLAIN, 1.5, Scalar::all(255));
 				printf("%d,%f,%f\n", tags[i], features[i].x, features[i].y);	
 			}
 			features.resize(k); //resize to total number of features (no blank spaces)
@@ -223,8 +224,8 @@ int main(int argc, char** argv)
 			}			
 		}
 		//namedWindow("Image Window", WINDOW_NORMAL );
-		imshow("Image Window", img);
-		waitKey(1); //image displayed till key is pressed
+//		imshow("Image Window", img);
+//		waitKey(1); //image displayed till key is pressed
 
 
 		outputVideo << img;
@@ -232,7 +233,7 @@ int main(int argc, char** argv)
 		features_prev.clear();
 		std::swap(features, features_prev); //move current features to previous
         std::swap(gray_prev, gray); //move the current image to previous
-		printf("\n"); //new line between each frame	
+	//	printf("\n"); //new line between each frame	
 	}
 
 	return 0;
