@@ -94,9 +94,9 @@ int main(int argc, char** argv)
 	size_t next_tag = 1;
 	//const int max_count = 100;
 	const double qlevel = .01; //quality of features increases as qlevel decreases
-	const double minDist = 15; //minimum distance between points
+	const double minDist = 25; //minimum distance between points
 		VideoWriter outputVideo;
-		outputVideo.open("foo.avi", CV_FOURCC('F','M','P','4'), 25, Size(1600,1200), true);
+		outputVideo.open("foo.avi", CV_FOURCC('F','M','P','4'), 25, Size(640,256), true);
 		if (!outputVideo.isOpened())
     	{
        		std::cerr  << "Could not open the output video for the input images" << std::endl;
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     	}
 
 	while (scanf("%s", name) != EOF){
-		printf("--%s",name);	
+		printf("--%s\n",name);	
 		//goodFeaturesToTrack variables
 		std::vector<Point2f> features;
 		
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 			std::vector<Point2f>::iterator itss = features_prev.begin();
 			while(it != tags.end())
 			{
-				if(!status[j] || its->y>625 || itss->y>625)
+				if(!status[j])// || its->y>625 || itss->y>625)
 				{					
 					it=tags.erase(it);
 					its=features.erase(its);
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 					while(ts != features.end())
 					{
 						error = pow(features_Vec[count].x - features_est[count].x, 2) + pow(features_Vec[count].y - features_est[count].y, 2);
-						if(error>error_val || ts->y>625 || tss->y>625)
+						if(error>error_val)// || ts->y>625 || tss->y>625)
 						{
 							t=tags.erase(t);
 							ts=features.erase(ts);
@@ -215,7 +215,7 @@ int main(int argc, char** argv)
 		if (features.size()< (size_t)max_count)
 		{			
 			const int max_count_2 = 100;
-			mask = maskingPoints(gray, features, 15,true);
+			mask = maskingPoints(gray, features, minDist,true);
 			goodFeaturesToTrack(gray,temp, max_count_2, qlevel, minDist,mask, 3, 0, 0.04);
 			for (size_t j =0; j < temp.size(); j++)
 			{
@@ -223,9 +223,9 @@ int main(int argc, char** argv)
 				tags.push_back(next_tag++);
 			}			
 		}
-		//namedWindow("Image Window", WINDOW_NORMAL );
-//		imshow("Image Window", img);
-//		waitKey(1); //image displayed till key is pressed
+		namedWindow("Image Window", WINDOW_NORMAL );
+		imshow("Image Window", img);
+		waitKey(1); //image displayed till key is pressed
 
 
 		outputVideo << img;
