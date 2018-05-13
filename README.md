@@ -1,1 +1,7 @@
 # trackingPoints
+
+This is an algorithm used to track feature points across the frames of a video with the goal of obtaining positional data. It is one component of a real-time SLAM system that was developed in the Computer Vision research group under former UIUC Professors Soon-jo Chung and Seth Hutchinson. 
+
+This algorithm implementation is centered on calculating an optical flow for a sparse feature set. The feature sets serve as 2D displacement vectors in order
+to show movement. Due to optical flow’s inherent assumption that pixel intensities of an object do not change between frames, the pyramidal implementation of the Lucas-Kanade
+method was used, where a 3x3 area is tracked around the main feature point. This leads to 9 pixels with the same motion helping to eliminate the effects of image noise. Once the output feature points of the optical flow are obtained, they are compared with the previous set of feature points to obtain their perspective transformation. To avoid the effect that outliers have on the backprojection error, the transformation is computed using the RANSAC-based robust method. The transformation is subsequently used to calculate an estimate of where the previous features should be. This estimation is then compared with the optical flow output in order to calculate an error value that, when compared to an input threshold, would assist in the removal of faulty feature points. The final feature points were then displayed on the frame and the video is outputted.
