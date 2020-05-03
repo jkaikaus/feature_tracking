@@ -1,4 +1,4 @@
-# FeatureTrackingSLAM
+# Feature Tracking - SLAM
 
 This is an algorithm used to track feature points across the frames of a video with the goal of obtaining positional data. It is one component of a real-time SLAM system that was developed in the Computer Vision research group under former UIUC Professors Soon-jo Chung and Seth Hutchinson. 
 
